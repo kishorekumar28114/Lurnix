@@ -1,21 +1,21 @@
-import { NextResponse } from "next/server";
-import { loadData, saveData } from "../_data";
 
-// GET: Get all posts
+import { NextResponse } from "next/server";
+import { connectToDatabase } from "../mongodb";
+
+// GET: Get all posts from MongoDB
 export async function GET() {
-  const data = loadData();
-  return NextResponse.json(data.posts);
+  const { db } = await connectToDatabase();
+  const posts = await db.collection("posts").find({}).toArray();
+  return NextResponse.json(posts);
 }
 
-// POST: Create a new post
+// POST: Create a new post in MongoDB
 export async function POST(req) {
   const { title, content, author, category, attachments } = await req.json();
   if (!title || !content || !author) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
-  const data = loadData();
   const post = {
-    id: Date.now(),
     title,
     content,
     author,
@@ -25,7 +25,8 @@ export async function POST(req) {
     comments: [],
     createdAt: new Date().toISOString()
   };
-  data.posts.push(post);
-  saveData(data);
+  const { db } = await connectToDatabase();
+  const result = await db.collection("posts").insertOne(post);
+  post._id = result.insertedId;
   return NextResponse.json(post);
 }
