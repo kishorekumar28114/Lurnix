@@ -1,0 +1,56 @@
+{
+  "users": [],
+  "posts": [
+    {
+      "id": 1753466090732,
+      "title": "helo",
+      "content": "dd",
+      "author": {
+        "name": "DemoUser",
+        "avatar": "DU"
+      },
+      "category": "Algebra",
+      "attachments": [],
+      "upvotes": 0,
+      "comments": [
+        {
+          "id": 1753466329106,
+          "author": {
+            "name": "DemoUser",
+            "avatar": "DU"
+          },
+          "content": "hello",
+          "attachments": [],
+          "createdAt": "2025-07-25T17:58:49.106Z"
+        }
+      ],
+      "createdAt": "2025-07-25T17:54:50.732Z"
+    },
+    {
+      "id": 1769065010720,
+      "title": "Geo",
+      "content": "has to work",
+      "author": {
+        "name": "DemoUser",
+        "avatar": "DU"
+      },
+      "category": "Geometry",
+      "attachments": [],
+      "upvotes": 0,
+      "comments": [
+        {
+          "id": 1769065047943,
+          "author": {
+            "name": "DemoUser",
+            "avatar": "DU"
+          },
+          "content": "jack how are u",
+          "attachments": [],
+          "createdAt": "2026-01-22T06:57:27.943Z"
+        }
+      ],
+      "createdAt": "2026-01-22T06:56:50.720Z"
+    }
+  ],
+  "comments": []
+}
