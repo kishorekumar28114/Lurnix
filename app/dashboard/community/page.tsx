@@ -359,32 +359,6 @@ export default function CommunityPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="w-full md:w-80 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Categories</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {categories.map((cat) => (
-                    <div key={cat.name} className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span>{cat.name}</span>
-                      <Badge variant="secondary">{cat.count}</Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Separator />
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Top Contributors</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">Coming soon...</p>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </div>
