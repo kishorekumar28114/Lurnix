@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
-import { FiBookOpen, FiMessageSquare, FiCpu, FiBox, FiBookmark, FiMic, FiList, FiMessageCircle } from "react-icons/fi"
+import { FiBookOpen, FiMessageSquare, FiCpu, FiBox, FiBookmark, FiMic, FiList, FiFileText } from "react-icons/fi"
 import DashboardLayout from "@/components/dashboard-layout"
 
 export default function DashboardPage() {
@@ -61,19 +61,27 @@ export default function DashboardPage() {
       color: "bg-indigo-100 text-indigo-700",
     },
     {
+      title: "Summarization",
+      icon: <FiFileText className="h-8 w-8" />,
+      description: "Extract insights and summarize any text or document",
+      path: "/dashboard/summarization",
+      color: "bg-emerald-100 text-emerald-700",
+    },
+    {
+      title: "Translation",
+      icon: <FiBookOpen className="h-8 w-8" />,
+      description: "Translate educational materials into Indian languages",
+      path: "/dashboard/Translation",
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
       title: "Features",
       icon: <FiBox className="h-8 w-8" />,
       description: "Discover all available features and tools",
       path: "/dashboard/features",
       color: "bg-orange-100 text-orange-700",
     },
-    {
-      title: "Feedback",
-      icon: <FiMessageCircle className="h-8 w-8" />,
-      description: "Share your thoughts and suggestions",
-      path: "/dashboard/feedback",
-      color: "bg-teal-100 text-teal-700",
-    },
+
   ]
 
   return (

@@ -1,488 +1,193 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FiCheck, FiX } from "react-icons/fi"
-import DashboardLayout from "@/components/dashboard-layout"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import confetti from "@/lib/confetti"
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { SourceSelector, SourceType } from '@/components/quiz/SourceSelector';
+import { UploadBox } from '@/components/quiz/UploadBox';
+import { BrainCircuit, Loader2, Wand2 } from 'lucide-react';
+import { cleanText } from '@/lib/quiz/textCleaner';
+import { chunkText } from '@/lib/quiz/textChunker';
+import DashboardLayout from "@/components/dashboard-layout";
 
-// Quiz types
-const quizTypes = [
-  { id: "math", name: "Mathematics" },
-  { id: "science", name: "Science" },
-  { id: "history", name: "History" },
-  { id: "english", name: "English" },
-]
+export default function Home() {
+  const router = useRouter();
+  const [source, setSource] = useState<SourceType>('text');
+  const [textInput, setTextInput] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
-// Sample questions for each type
-const questions = {
-  math: [
-    {
-      id: 1,
-      question: "What is 9 × 7?",
-      options: ["56", "63", "72", "81"],
-      answer: "63",
-    },
-    {
-      id: 2,
-      question: "Solve for x: 2x + 5 = 15",
-      options: ["5", "7.5", "10", "5.5"],
-      answer: "5",
-    },
-    {
-      id: 3,
-      question: "What is the square root of 144?",
-      options: ["12", "14", "10", "16"],
-      answer: "12",
-    },
-    {
-      id: 4,
-      question: "If a triangle has angles of 30° and 60°, what is the third angle?",
-      options: ["60°", "90°", "120°", "30°"],
-      answer: "90°",
-    },
-    {
-      id: 5,
-      question: "What is the value of π (pi) to two decimal places?",
-      options: ["3.14", "3.41", "3.12", "3.16"],
-      answer: "3.14",
-    },
-    {
-      id: 6,
-      question: "What is the area of a circle with radius 5 units?",
-      options: ["25π square units", "10π square units", "5π square units", "15π square units"],
-      answer: "25π square units",
-    },
-    {
-      id: 7,
-      question: "What is the sum of the interior angles of a pentagon?",
-      options: ["360°", "540°", "720°", "900°"],
-      answer: "540°",
-    },
-    {
-      id: 8,
-      question: "Simplify: (3² + 4²)½",
-      options: ["5", "7", "25", "3"],
-      answer: "5",
-    },
-    {
-      id: 9,
-      question: "What is 25% of 80?",
-      options: ["20", "25", "40", "15"],
-      answer: "20",
-    },
-    {
-      id: 10,
-      question: "If f(x) = 2x + 3, what is f(4)?",
-      options: ["7", "8", "11", "14"],
-      answer: "11",
-    },
-  ],
-  science: [
-    {
-      id: 1,
-      question: "What is the chemical symbol for gold?",
-      options: ["Go", "Gd", "Au", "Ag"],
-      answer: "Au",
-    },
-    {
-      id: 2,
-      question: "Which planet is known as the Red Planet?",
-      options: ["Venus", "Mars", "Jupiter", "Saturn"],
-      answer: "Mars",
-    },
-    // Add 8 more science questions
-    {
-      id: 3,
-      question: "What is the largest organ in the human body?",
-      options: ["Heart", "Liver", "Skin", "Brain"],
-      answer: "Skin",
-    },
-    {
-      id: 4,
-      question: "What is the hardest natural substance on Earth?",
-      options: ["Gold", "Iron", "Diamond", "Platinum"],
-      answer: "Diamond",
-    },
-    {
-      id: 5,
-      question: "Which of these is NOT a state of matter?",
-      options: ["Solid", "Liquid", "Gas", "Energy"],
-      answer: "Energy",
-    },
-    {
-      id: 6,
-      question: "What is the process by which plants make their own food called?",
-      options: ["Respiration", "Photosynthesis", "Digestion", "Absorption"],
-      answer: "Photosynthesis",
-    },
-    {
-      id: 7,
-      question: "What is the closest star to Earth?",
-      options: ["Proxima Centauri", "Alpha Centauri", "The Sun", "Sirius"],
-      answer: "The Sun",
-    },
-    {
-      id: 8,
-      question: "What is the unit of electric current?",
-      options: ["Volt", "Watt", "Ampere", "Ohm"],
-      answer: "Ampere",
-    },
-    {
-      id: 9,
-      question: "Which element has the chemical symbol 'O'?",
-      options: ["Osmium", "Oxygen", "Oganesson", "Olivine"],
-      answer: "Oxygen",
-    },
-    {
-      id: 10,
-      question: "What is the speed of light in a vacuum?",
-      options: ["300,000 km/s", "150,000 km/s", "200,000 km/s", "250,000 km/s"],
-      answer: "300,000 km/s",
-    },
-  ],
-  history: [
-    {
-      id: 1,
-      question: "In which year did World War II end?",
-      options: ["1943", "1944", "1945", "1946"],
-      answer: "1945",
-    },
-    {
-      id: 2,
-      question: "Who was the first President of the United States?",
-      options: ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
-      answer: "George Washington",
-    },
-    // Add 8 more history questions
-    {
-      id: 3,
-      question: "Which ancient civilization built the pyramids at Giza?",
-      options: ["Romans", "Greeks", "Egyptians", "Persians"],
-      answer: "Egyptians",
-    },
-    {
-      id: 4,
-      question: "The Renaissance period began in which country?",
-      options: ["France", "England", "Italy", "Spain"],
-      answer: "Italy",
-    },
-    {
-      id: 5,
-      question: "Who wrote the 'I Have a Dream' speech?",
-      options: ["Malcolm X", "Martin Luther King Jr.", "John F. Kennedy", "Rosa Parks"],
-      answer: "Martin Luther King Jr.",
-    },
-    {
-      id: 6,
-      question: "Which year did the Berlin Wall fall?",
-      options: ["1987", "1989", "1991", "1993"],
-      answer: "1989",
-    },
-    {
-      id: 7,
-      question: "Who was the first woman to fly solo across the Atlantic Ocean?",
-      options: ["Amelia Earhart", "Bessie Coleman", "Harriet Quimby", "Jacqueline Cochran"],
-      answer: "Amelia Earhart",
-    },
-    {
-      id: 8,
-      question: "The Industrial Revolution began in which country?",
-      options: ["United States", "France", "Germany", "Great Britain"],
-      answer: "Great Britain",
-    },
-    {
-      id: 9,
-      question: "Which empire was ruled by Genghis Khan?",
-      options: ["Roman Empire", "Ottoman Empire", "Mongol Empire", "Byzantine Empire"],
-      answer: "Mongol Empire",
-    },
-    {
-      id: 10,
-      question: "Who painted the Mona Lisa?",
-      options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Michelangelo"],
-      answer: "Leonardo da Vinci",
-    },
-  ],
-  english: [
-    {
-      id: 1,
-      question: "Which of these is a synonym for 'happy'?",
-      options: ["Sad", "Joyful", "Angry", "Tired"],
-      answer: "Joyful",
-    },
-    {
-      id: 2,
-      question: "What is the past tense of 'run'?",
-      options: ["Running", "Ran", "Runned", "Runs"],
-      answer: "Ran",
-    },
-    // Add 8 more english questions
-    {
-      id: 3,
-      question: 'Which of these is an example of a pronoun?",hich of these is an example of a pronoun?',
-      options: ["Run", "Beautiful", "She", "Quickly"],
-      answer: "She",
-    },
-    {
-      id: 4,
-      question: "What is the plural form of 'child'?",
-      options: ["Childs", "Children", "Childes", "Childies"],
-      answer: "Children",
-    },
-    {
-      id: 5,
-      question: "Which of these is an antonym for 'brave'?",
-      options: ["Courageous", "Fearless", "Cowardly", "Bold"],
-      answer: "Cowardly",
-    },
-    {
-      id: 6,
-      question: "What is the main verb in the sentence: 'She walks to school every day'?",
-      options: ["She", "Walks", "School", "Every"],
-      answer: "Walks",
-    },
-    {
-      id: 7,
-      question: "Which punctuation mark ends an interrogative sentence?",
-      options: ["Period", "Comma", "Exclamation mark", "Question mark"],
-      answer: "Question mark",
-    },
-    {
-      id: 8,
-      question: "What literary device is used when giving human qualities to non-human things?",
-      options: ["Simile", "Metaphor", "Personification", "Alliteration"],
-      answer: "Personification",
-    },
-    {
-      id: 9,
-      question: "Who wrote 'Romeo and Juliet'?",
-      options: ["Charles Dickens", "Jane Austen", "William Shakespeare", "Mark Twain"],
-      answer: "William Shakespeare",
-    },
-    {
-      id: 10,
-      question: "What is the correct spelling?",
-      options: ["Accomodate", "Accommodate", "Acommodate", "Accomadate"],
-      answer: "Accommodate",
-    },
-  ],
-}
+  const startQuizGeneration = async (chunks: string[]) => {
+    setLoadingStep("AI is crafting your quiz questions...");
+    try {
+      const res = await fetch('/api/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chunks })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate quiz.");
 
-export default function QuizPage() {
-  const router = useRouter()
-  const [quizType, setQuizType] = useState("")
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState("")
-  const [score, setScore] = useState(0)
-  const [showResult, setShowResult] = useState(false)
-  const [quizStarted, setQuizStarted] = useState(false)
-  const [answers, setAnswers] = useState<string[]>([])
-  const [showCelebration, setShowCelebration] = useState(false)
-
-  useEffect(() => {
-    // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
+      // Store questions in session storage and navigate
+      sessionStorage.setItem('quiz_questions', JSON.stringify(data.questions));
+      router.push('/dashboard/quiz/take');
+    } catch (err: any) {
+      setError(err.message);
+      setIsLoading(false);
     }
-  }, [router])
+  };
 
-  const handleStartQuiz = () => {
-    if (!quizType) return
-
-    setQuizStarted(true)
-    setCurrentQuestion(0)
-    setScore(0)
-    setShowResult(false)
-    setAnswers([])
+  const processContent = (rawText: string) => {
+    setLoadingStep("Cleaning and preparing text...");
+    const cleaned = cleanText(rawText);
+    if (!cleaned || cleaned.length < 50) {
+      setError("The provided content is too short to generate a meaningful quiz.");
+      setIsLoading(false);
+      return;
+    }
+    const chunks = chunkText(cleaned, 400); // 400 words per chunk to be safe with limits
+    startQuizGeneration(chunks);
   }
 
-  const handleAnswerSelect = (answer: string) => {
-    setSelectedAnswer(answer)
-  }
+  const handleGenerate = async () => {
+    setIsLoading(true);
+    setError(null);
 
-  const handleNextQuestion = () => {
-    // Save the answer
-    const newAnswers = [...answers]
-    newAnswers[currentQuestion] = selectedAnswer
-    setAnswers(newAnswers)
+    try {
+      if (source === 'text') {
+        if (!textInput.trim()) {
+          throw new Error("Please enter some text.");
+        }
+        processContent(textInput);
+      } else if (source === 'youtube') {
+        if (!textInput.trim()) {
+          throw new Error("Please paste the YouTube transcript.");
+        }
+        processContent(textInput);
 
-    // Check if answer is correct
-    const currentQuizQuestions = questions[quizType as keyof typeof questions]
-    if (selectedAnswer === currentQuizQuestions[currentQuestion].answer) {
-      setScore(score + 1)
-    }
+      } else if (source === 'pdf') {
+        if (!pdfFile) {
+          throw new Error("Please select a PDF file.");
+        }
+        setLoadingStep("Reading PDF document...");
+        const formData = new FormData();
+        formData.append("file", pdfFile);
 
-    // Move to next question or show results
-    if (currentQuestion < 9) {
-      setCurrentQuestion(currentQuestion + 1)
-      setSelectedAnswer("")
-    } else {
-      setShowResult(true)
-
-      // Check if all answers are correct for celebration
-      if (score + (selectedAnswer === currentQuizQuestions[currentQuestion].answer ? 1 : 0) === 10) {
-        setShowCelebration(true)
-        confetti()
-
-        // Reset celebration after 2 seconds
-        setTimeout(() => {
-          setShowCelebration(false)
-        }, 2000)
+        const res = await fetch('/api/extract-pdf', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        processContent(data.text);
       }
+    } catch (err: any) {
+      setError(err.message);
+      setIsLoading(false);
     }
-  }
-
-  const handleRestartQuiz = () => {
-    setQuizStarted(false)
-    setQuizType("")
-    setCurrentQuestion(0)
-    setScore(0)
-    setShowResult(false)
-    setAnswers([])
-    setSelectedAnswer("")
-  }
-
-  // Get current quiz questions
-  const currentQuizQuestions = quizType ? questions[quizType as keyof typeof questions] : []
+  };
 
   return (
     <DashboardLayout>
-      <div
-        className={`p-6 min-h-screen ${showCelebration ? "bg-gradient-to-r from-yellow-200 via-pink-200 to-yellow-200 transition-colors duration-500" : ""}`}
-      >
-        <h1 className="text-3xl font-bold mb-6">Quiz</h1>
+      <div className="py-16 px-4 font-sans text-slate-800 flex flex-col items-center">
+        <div className="max-w-3xl w-full text-center mb-12">
+          <div className="inline-flex items-center justify-center p-4 bg-amber-100 rounded-full mb-6">
+            <BrainCircuit className="w-12 h-12 text-amber-600" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
+            AI Universal <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-yellow-600">Quiz Generator</span>
+          </h1>
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            Transform any document, video, or text into an interactive learning experience.
+            Master complex topics through AI-powered conceptual questioning.
+          </p>
+        </div>
 
-        {!quizStarted ? (
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>Start a New Quiz</CardTitle>
-              <CardDescription>Select a quiz type to begin. Each quiz contains 10 questions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quiz-type">Quiz Type</Label>
-                  <Select value={quizType} onValueChange={setQuizType}>
-                    <SelectTrigger id="quiz-type">
-                      <SelectValue placeholder="Select a quiz type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {quizTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        <div className="w-full max-w-3xl bg-white p-8 md:p-10 rounded-[2rem] shadow-xl border border-slate-100 mt-2 hover:shadow-2xl transition-all duration-300">
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4 text-center">1. Choose your learning material</h3>
+            <SourceSelector selectedSource={source} onSelect={setSource} disabled={isLoading} />
+          </div>
+
+          <div className="mb-8 min-h-[150px]">
+            {source === 'text' && (
+              <textarea
+                className="w-full h-48 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-100 outline-none transition-all resize-none text-slate-700 placeholder-slate-400"
+                placeholder="Paste your study notes, article, or any text here..."
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                disabled={isLoading}
+              />
+            )}
+
+            {source === 'youtube' && (
+              <div className="flex flex-col gap-4">
+                <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-800">
+                  <h4 className="font-bold flex items-center gap-2 mb-2">
+                    How to get a YouTube Transcript:
+                  </h4>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Open your required video on <a href="https://youtube.com" target="_blank" rel="noreferrer" className="underline font-medium hover:text-amber-900">YouTube</a>.</li>
+                    <li>Click on the video description.</li>
+                    <li>Scroll down and click <b>"Show Transcript"</b>.</li>
+                    <li>Select all the transcript text, right-click, and select <b>Copy</b>.</li>
+                    <li>Paste the text into the box below.</li>
+                  </ol>
                 </div>
+                <textarea
+                  className="w-full h-48 p-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-amber-400 focus:ring-4 focus:ring-amber-100 outline-none transition-all resize-none text-slate-700 placeholder-slate-400"
+                  placeholder="Paste the YouTube transcript here..."
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  disabled={isLoading}
+                />
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleStartQuiz} disabled={!quizType} className="w-full">
-                Start Quiz
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : showResult ? (
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>Quiz Results</CardTitle>
-              <CardDescription>You scored {score} out of 10 questions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Progress value={score * 10} className="h-3" />
+            )}
 
-                {score === 10 && (
-                  <Alert className="bg-green-100 border-green-200">
-                    <FiCheck className="h-5 w-5 text-green-600" />
-                    <AlertTitle className="text-green-800">Perfect Score!</AlertTitle>
-                    <AlertDescription className="text-green-700">
-                      Congratulations! You got all questions correct.
-                    </AlertDescription>
-                  </Alert>
-                )}
+            {source === 'pdf' && (
+              <UploadBox
+                onFileSelect={(f) => setPdfFile(f)}
+                isLoading={isLoading}
+              />
+            )}
+            {source === 'pdf' && pdfFile && (
+              <div className="mt-4 p-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium flex items-center justify-center border border-emerald-100">
+                Selected: {pdfFile.name}
+              </div>
+            )}
+          </div>
 
-                <div className="space-y-2">
-                  {currentQuizQuestions.map((q, index) => {
-                    const isCorrect = answers[index] === q.answer
-                    return (
-                      <div
-                        key={q.id}
-                        className={`p-3 rounded-md ${isCorrect ? "bg-green-50 border border-green-100" : "bg-red-50 border border-red-100"}`}
-                      >
-                        <div className="flex items-start gap-2">
-                          {isCorrect ? (
-                            <FiCheck className="h-5 w-5 text-green-600 mt-0.5" />
-                          ) : (
-                            <FiX className="h-5 w-5 text-red-600 mt-0.5" />
-                          )}
-                          <div>
-                            <p className="font-medium">{q.question}</p>
-                            <p className="text-sm">
-                              Your answer:{" "}
-                              <span className={isCorrect ? "text-green-600" : "text-red-600"}>{answers[index]}</span>
-                            </p>
-                            {!isCorrect && <p className="text-sm text-green-600">Correct answer: {q.answer}</p>}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleRestartQuiz} className="w-full">
-                Start a New Quiz
-              </Button>
-            </CardFooter>
-          </Card>
-        ) : (
-          <Card className="max-w-md mx-auto">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Question {currentQuestion + 1} of 10</CardTitle>
-                <div className="text-sm text-muted-foreground">Score: {score}</div>
-              </div>
-              <Progress value={currentQuestion * 10} className="h-2" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <h2 className="text-xl font-medium">{currentQuizQuestions[currentQuestion].question}</h2>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium text-center">
+              {error}
+            </div>
+          )}
 
-                <RadioGroup value={selectedAnswer} onValueChange={handleAnswerSelect}>
-                  <div className="space-y-2">
-                    {currentQuizQuestions[currentQuestion].options.map((option) => (
-                      <div key={option} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-muted">
-                        <RadioGroupItem value={option} id={option} />
-                        <Label htmlFor={option} className="flex-1 cursor-pointer">
-                          {option}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleNextQuestion} disabled={!selectedAnswer} className="w-full">
-                {currentQuestion < 9 ? "Next Question" : "Finish Quiz"}
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+          <div className="flex justify-center">
+            <button
+              onClick={handleGenerate}
+              disabled={isLoading}
+              className={`flex items-center gap-3 px-8 py-4 rounded-xl font-bold text-lg text-white shadow-lg transition-all 
+                    ${isLoading ? 'bg-amber-400 cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:shadow-amber-200 hover:-translate-y-0.5'}
+                 `}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  {loadingStep}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-6 h-6" />
+                  Generate Interactive Quiz
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }
-

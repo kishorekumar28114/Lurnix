@@ -20,6 +20,7 @@ import {
   FiMenu,
   FiLogOut,
   FiMessageCircle,
+  FiFileText,
 } from "react-icons/fi"
 import { useMobile } from "@/hooks/use-mobile"
 
@@ -54,8 +55,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Resources", icon: <FiBookmark className="h-5 w-5" />, path: "/dashboard/resources" },
     { name: "Community", icon: <FiBookOpen className="h-5 w-5" />, path: "/dashboard/community" },
     { name: "Voice to Chat", icon: <FiMic className="h-5 w-5" />, path: "/dashboard/voice-to-chat" },
+    { name: "Summarization", icon: <FiFileText className="h-5 w-5" />, path: "/dashboard/summarization" },
+    { name: "Translation", icon: <FiBookOpen className="h-5 w-5" />, path: "/dashboard/Translation" },
     { name: "Features", icon: <FiBox className="h-5 w-5" />, path: "/dashboard/features" },
-    { name: "Feedback", icon: <FiMessageCircle className="h-5 w-5" />, path: "/dashboard/feedback" },
   ]
 
   const NavLinks = () => (
@@ -67,9 +69,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             key={item.path}
             href={item.path}
             onClick={() => setOpen(false)}
-            className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-              isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${isActive ? "bg-primary/10 text-primary font-medium" : "text-muted-foreground hover:bg-muted"
+              }`}
           >
             {item.icon}
             {item.name}
