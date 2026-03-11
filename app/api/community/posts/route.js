@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "../mongodb";
+import { getSession } from "@/lib/auth/session";
 
 export const dynamic = 'force-dynamic';
 
@@ -13,14 +14,20 @@ export async function GET() {
 
 // POST: Create a new post in MongoDB
 export async function POST(req) {
-  const { title, content, author, category, attachments } = await req.json();
-  if (!title || !content || !author) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { title, content, category, attachments } = await req.json();
+  if (!title || !content) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
   const post = {
     title,
     content,
-    author,
+    author: session.name,       // Extracted reliably from session
+    authorId: session.userId,   // Store userId for future isolation/reference if needed
     category: category || "General",
     attachments: attachments || [],
     upvotes: 0,

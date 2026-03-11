@@ -21,10 +21,7 @@ export default function VisualizationPage() {
 
   useEffect(() => {
     // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
+    
 
     // Initialize canvas with grid and axes
     const canvas = canvasRef.current

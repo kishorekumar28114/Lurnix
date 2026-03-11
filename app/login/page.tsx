@@ -35,7 +35,6 @@ export default function LoginPage() {
         setError(data.error || "Login failed");
         return;
       }
-      localStorage.setItem("isLoggedIn", "true");
       router.push("/dashboard");
     } catch (err) {
       setError("Something went wrong. Try again.");
