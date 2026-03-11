@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 let conversationHistory = [];
+const Lurnix_Chatbot = process.env.Lurnix_Chatbot;
 
 export async function POST(request) {
   const body = await request.json();
@@ -25,7 +26,7 @@ export async function POST(request) {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          Authorization: `Bearer ${Lurnix_Chatbot}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost',
           'X-Title': 'Lurnix Chatbot',

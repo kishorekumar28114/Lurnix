@@ -1,7 +1,7 @@
 import { Question, AnalysisReport } from "./types";
 
 // Expects process.env.OPENROUTER_API_KEY
-const apiKey = process.env.OPENROUTER_API_KEY || "";
+const Lurnix_Quiz = process.env.Lurnix_Quiz;
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
 
 // Recommend standard model for text logic
@@ -82,7 +82,7 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
             const response = await fetch(openRouterUrl, {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${apiKey}`,
+                    "Authorization": `Bearer ${Lurnix_Quiz}`,
                     "Content-Type": "application/json",
                     "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
                     "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Lurnix Quiz Generator"
@@ -176,7 +176,7 @@ Output MUST BE EXACTLY valid JSON in this structure:
         const response = await fetch(openRouterUrl, {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${apiKey}`,
+                "Authorization": `Bearer ${Lurnix_Quiz}`,
                 "Content-Type": "application/json",
                 "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
                 "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Lurnix Quiz Generator"

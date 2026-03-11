@@ -1,10 +1,11 @@
 import axios from "axios";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const Lurnix_Translator = process.env.Lurnix_Translator;
+
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
-    if (!OPENROUTER_API_KEY) {
+    if (!Lurnix_Translator) {
         throw new Error("OpenRouter API key is not configured.");
     }
 
@@ -42,7 +43,7 @@ Output ONLY the translated text.`,
             },
             {
                 headers: {
-                    Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+                    Authorization: `Bearer ${Lurnix_Translator}`,
                     "Content-Type": "application/json",
                 },
             }
@@ -56,35 +57,4 @@ Output ONLY the translated text.`,
         }
         throw error;
     }
-}
-
-export async function simplifyExplanation(text: string, language: string): Promise<string> {
-    if (!OPENROUTER_API_KEY) {
-        throw new Error("OpenRouter API key is not configured.");
-    }
-
-    const response = await axios.post(
-        API_URL,
-        {
-            model: "openai/gpt-3.5-turbo",
-            messages: [
-                {
-                    role: "system",
-                    content: `You are a helpful teacher. The user will provide a text in ${language}. Rewrite the text in simpler words in the same language (${language}) so that students can understand difficult concepts easily. Keep it concise.`,
-                },
-                {
-                    role: "user",
-                    content: text,
-                },
-            ],
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-            },
-        }
-    );
-
-    return response.data.choices[0].message.content;
 }
