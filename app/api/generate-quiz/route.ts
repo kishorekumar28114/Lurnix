@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateQuizQuestions } from "@/lib/quiz/aiClient";
+import { sanitizeAiErrorMessage } from "@/lib/openrouter";
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,8 +21,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ questions });
     } catch (error: any) {
         console.error("Quiz Generation Error in API Route:", error);
+        const rawMsg = error.message || "Failed to generate quiz.";
         return NextResponse.json(
-            { error: error.message || "Failed to generate quiz." },
+            { error: sanitizeAiErrorMessage(rawMsg) },
             { status: 500 }
         );
     }

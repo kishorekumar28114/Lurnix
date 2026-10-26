@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import openai from '@/lib/summarization/openai';
 import { extractTextFromBuffer } from '@/lib/summarization/extractText';
+import { getAiModel, getOpenRouterApiKey, sanitizeAiErrorMessage } from '@/lib/openrouter';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
     try {
+        if (!getOpenRouterApiKey()) {
+            return NextResponse.json({ error: 'OpenRouter API key is not configured' }, { status: 500 });
+        }
+
         let formData;
         try {
             formData = await req.formData();
@@ -42,9 +47,10 @@ export async function POST(req: NextRequest) {
 
         // Limit content size to avoid token limits (gpt-4o-mini has large window but let's be safe)
         const truncatedContent = content.slice(0, 30000);
+        const model = getAiModel();
 
         const response = await openai.chat.completions.create({
-            model: process.env.AI_MODEL || "openai/gpt-3.5-turbo",
+            model,
             messages: [
                 {
                     role: "system",
@@ -62,10 +68,13 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ summary });
     } catch (error: any) {
-        console.error('SUMMARIZATION ERROR:', error);
+        const status = error.status || error.response?.status || 500;
+        const rawMessage = error.message || error.response?.data?.error?.message || 'An error occurred during summarization';
+        const sanitizedMsg = sanitizeAiErrorMessage(rawMessage);
+        console.error(`[SUMMARIZATION ERROR] Status: ${status}, Message: ${sanitizedMsg}`);
         return NextResponse.json(
-            { error: error.message || 'An error occurred during summarization' },
-            { status: 500 }
+            { error: sanitizedMsg },
+            { status: status >= 400 && status < 600 ? status : 500 }
         );
     }
 }

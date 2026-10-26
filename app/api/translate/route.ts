@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { translateText } from "@/lib/openrouter";
+import { translateText, sanitizeAiErrorMessage } from "@/lib/openrouter";
 import { TranslationRequest } from "@/types/translation";
 
 export async function POST(request: Request) {
@@ -19,9 +19,10 @@ export async function POST(request: Request) {
         return NextResponse.json({ translatedText });
     } catch (error) {
         console.error("Translation error:", error);
-        const errorMessage = error instanceof Error ? error.message : "Failed to translate text";
+        const rawMessage = error instanceof Error ? error.message : "Failed to translate text";
+        const sanitized = sanitizeAiErrorMessage(rawMessage);
         return NextResponse.json(
-            { error: errorMessage },
+            { error: sanitized },
             { status: 500 }
         );
     }

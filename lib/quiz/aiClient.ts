@@ -1,18 +1,23 @@
 import { Question, AnalysisReport } from "./types";
-
-// Expects process.env.OPENROUTER_API_KEY
-const apiKey = process.env.OPENROUTER_API_KEY || "";
-const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
-
-// Recommend standard model for text logic
-const model = process.env.AI_MODEL || "openai/gpt-3.5-turbo"; // Using a free variant on OpenRouter
-
+import {
+    getAiModel,
+    getOpenRouterApiKey,
+    getOpenRouterHeaders,
+    sanitizeAiErrorMessage,
+    OPENROUTER_API_URL,
+} from "@/lib/openrouter";
 
 /**
  * Generates quiz questions from given context chunks.
  * We want EXACTLY 10 questions spread out over whatever chunks are provided.
  */
 export async function generateQuizQuestions(chunks: string[]): Promise<Question[]> {
+    const apiKey = getOpenRouterApiKey();
+    if (!apiKey) {
+        throw new Error("OpenRouter API key is not configured.");
+    }
+    const model = getAiModel();
+
     const totalChunks = chunks.length;
     // Distribute the 10 questions somewhat evenly across chunks
     let questionsPerChunk = chunks.map(() => Math.floor(10 / totalChunks));
@@ -79,14 +84,9 @@ Use only the knowledge contained in the input material.
 Return EXACTLY the requested JSON structure list with exactly ${chunkCount} objects. Make sure it is valid JSON.
 `;
         try {
-            const response = await fetch(openRouterUrl, {
+            const response = await fetch(OPENROUTER_API_URL, {
                 method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${apiKey}`,
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-                    "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Lurnix Quiz Generator"
-                },
+                headers: getOpenRouterHeaders("Lurnix Quiz Generator"),
                 body: JSON.stringify({
                     model: model,
                     messages: [{ role: "user", content: prompt }]
@@ -95,7 +95,14 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
 
             if (!response.ok) {
                 const errData = await response.text();
-                throw new Error(`OpenRouter API Error: ${response.status} - ${errData}`);
+                let errMsg = errData;
+                try {
+                    const parsed = JSON.parse(errData);
+                    errMsg = parsed.error?.message || errData;
+                } catch (_) {}
+                const sanitized = sanitizeAiErrorMessage(errMsg);
+                console.error(`[Quiz Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
+                throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
             }
 
             const responseData = await response.json();
@@ -135,6 +142,12 @@ export async function generatePerformanceAnalysis(
     questions: Question[],
     userAnswers: any[]
 ): Promise<AnalysisReport> {
+    const apiKey = getOpenRouterApiKey();
+    if (!apiKey) {
+        throw new Error("OpenRouter API key is not configured.");
+    }
+    const model = getAiModel();
+
     // Construct context regarding the user's performance
     const performanceData = questions.map((q, idx) => {
         const ans = userAnswers.find(u => u.questionIndex === idx);
@@ -173,14 +186,9 @@ Output MUST BE EXACTLY valid JSON in this structure:
 `;
 
     try {
-        const response = await fetch(openRouterUrl, {
+        const response = await fetch(OPENROUTER_API_URL, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-                "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Lurnix Quiz Generator"
-            },
+            headers: getOpenRouterHeaders("Lurnix Quiz Analyzer"),
             body: JSON.stringify({
                 model: model,
                 messages: [{ role: "user", content: prompt }]
@@ -189,7 +197,14 @@ Output MUST BE EXACTLY valid JSON in this structure:
 
         if (!response.ok) {
             const errData = await response.text();
-            throw new Error(`OpenRouter API Error: ${response.status} - ${errData}`);
+            let errMsg = errData;
+            try {
+                const parsed = JSON.parse(errData);
+                errMsg = parsed.error?.message || errData;
+            } catch (_) {}
+            const sanitized = sanitizeAiErrorMessage(errMsg);
+            console.error(`[Analysis Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
+            throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
         }
 
         const responseData = await response.json();
@@ -216,3 +231,4 @@ Output MUST BE EXACTLY valid JSON in this structure:
         throw new Error("Failed to generate analysis: " + (e.message || "Unknown error"));
     }
 }
+

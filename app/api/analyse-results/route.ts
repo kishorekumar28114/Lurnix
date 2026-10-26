@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generatePerformanceAnalysis } from "@/lib/quiz/aiClient";
+import { sanitizeAiErrorMessage } from "@/lib/openrouter";
 
 export async function POST(req: NextRequest) {
     try {
@@ -15,8 +16,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ analysis });
     } catch (error: any) {
         console.error("Analysis Generation Error in API Route:", error);
+        const rawMsg = error.message || "Failed to generate learning analysis.";
         return NextResponse.json(
-            { error: "Failed to generate learning analysis." },
+            { error: sanitizeAiErrorMessage(rawMsg) },
             { status: 500 }
         );
     }
