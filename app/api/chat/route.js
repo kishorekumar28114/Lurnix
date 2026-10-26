@@ -15,9 +15,19 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Message is required' }, { status: 400 });
   }
 
-  const apiKey = process.env.Lurnix_Chatbot || process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'OpenRouter API key is not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'GROQ_API_KEY is not configured' }, { status: 500 });
+  }
+
+  const apiUrl = process.env.GROQ_API_URL;
+  if (!apiUrl) {
+    return NextResponse.json({ error: 'GROQ_API_URL is not configured' }, { status: 500 });
+  }
+
+  const model = process.env.GROQ_MODEL;
+  if (!model) {
+    return NextResponse.json({ error: 'GROQ_MODEL is not configured' }, { status: 500 });
   }
 
   let conversationHistory = [...historyContext, { role: 'user', content: message }];
@@ -25,11 +35,9 @@ export async function POST(request) {
     conversationHistory = conversationHistory.slice(-10);
   }
 
-  const model = process.env.AI_MODEL || 'meta-llama/llama-3.1-8b-instruct';
-
   try {
-    const openRouterResponse = await axios.post(
-      'https://openrouter.ai/api/v1/chat/completions',
+    const groqResponse = await axios.post(
+      apiUrl,
       {
         model,
         messages: conversationHistory,
@@ -38,18 +46,16 @@ export async function POST(request) {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-          'X-Title': process.env.NEXT_PUBLIC_SITE_NAME || 'Lurnix Chatbot',
         },
       }
     );
     let reply = '';
     if (
-      openRouterResponse.data &&
-      openRouterResponse.data.choices &&
-      openRouterResponse.data.choices.length > 0
+      groqResponse.data &&
+      groqResponse.data.choices &&
+      groqResponse.data.choices.length > 0
     ) {
-      reply = openRouterResponse.data.choices[0].message.content;
+      reply = groqResponse.data.choices[0].message.content;
     }
     conversationHistory.push({ role: 'assistant', content: reply });
     return NextResponse.json({ reply });
@@ -57,7 +63,7 @@ export async function POST(request) {
     const status = error.response?.status || 500;
     const rawError = error.response?.data?.error?.message || error.message;
     const sanitizedMsg = typeof rawError === 'string'
-      ? rawError.replace(/sk-[a-zA-Z0-9_-]{20,}/g, '[REDACTED_KEY]').replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, 'Bearer [REDACTED]')
+      ? rawError.replace(/gsk_[a-zA-Z0-9_-]{20,}/g, '[REDACTED_KEY]').replace(/sk-[a-zA-Z0-9_-]{20,}/g, '[REDACTED_KEY]').replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, 'Bearer [REDACTED]')
       : 'Failed to process AI request';
     console.error(`[Chat API Error] Status: ${status}, Model: ${model}, Message: ${sanitizedMsg}`);
     return NextResponse.json(

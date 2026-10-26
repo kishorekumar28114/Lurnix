@@ -1,22 +1,23 @@
 import { Question, AnalysisReport } from "./types";
-import {
-    getAiModel,
-    getOpenRouterApiKey,
-    getOpenRouterHeaders,
-    sanitizeAiErrorMessage,
-    OPENROUTER_API_URL,
-} from "@/lib/openrouter";
+import { sanitizeAiErrorMessage } from "@/lib/openrouter";
 
 /**
  * Generates quiz questions from given context chunks.
  * We want EXACTLY 10 questions spread out over whatever chunks are provided.
  */
 export async function generateQuizQuestions(chunks: string[]): Promise<Question[]> {
-    const apiKey = process.env.Lurnix_Quiz || getOpenRouterApiKey();
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-        throw new Error("OpenRouter API key is not configured.");
+        throw new Error("GROQ_API_KEY is not configured.");
     }
-    const model = getAiModel();
+    const apiUrl = process.env.GROQ_API_URL;
+    if (!apiUrl) {
+        throw new Error("GROQ_API_URL is not configured.");
+    }
+    const model = process.env.GROQ_MODEL;
+    if (!model) {
+        throw new Error("GROQ_MODEL is not configured.");
+    }
 
     const totalChunks = chunks.length;
     // Distribute the 10 questions somewhat evenly across chunks
@@ -84,12 +85,16 @@ Use only the knowledge contained in the input material.
 Return EXACTLY the requested JSON structure list with exactly ${chunkCount} objects. Make sure it is valid JSON.
 `;
         try {
-            const response = await fetch(OPENROUTER_API_URL, {
+            const response = await fetch(apiUrl, {
                 method: "POST",
-                headers: getOpenRouterHeaders("Lurnix Quiz Generator", apiKey),
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
-                    model: model,
-                    messages: [{ role: "user", content: prompt }]
+                    model,
+                    messages: [{ role: "user", content: prompt }],
+                    temperature: 0.5,
                 })
             });
 
@@ -102,7 +107,7 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
                 } catch (_) { }
                 const sanitized = sanitizeAiErrorMessage(errMsg);
                 console.error(`[Quiz Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
-                throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
+                throw new Error(`Groq API Error: ${response.status} - ${sanitized}`);
             }
 
             const responseData = await response.json();
@@ -124,8 +129,8 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
             allQuestions = [...allQuestions, ...parsedData];
         } catch (e: any) {
             console.error("AI Generation Error: ", e);
-            if (e.message && e.message.includes("OpenRouter API Error")) {
-                throw e; // Pass through API quota/auth errors
+            if (e.message && e.message.includes("Groq API Error")) {
+                throw e;
             }
             throw new Error("Failed to generate questions. Model response was invalid format: " + (e.message || "Unknown Error"));
         }
@@ -142,11 +147,18 @@ export async function generatePerformanceAnalysis(
     questions: Question[],
     userAnswers: any[]
 ): Promise<AnalysisReport> {
-    const apiKey = process.env.Lurnix_Quiz || getOpenRouterApiKey();
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-        throw new Error("OpenRouter API key is not configured.");
+        throw new Error("GROQ_API_KEY is not configured.");
     }
-    const model = getAiModel();
+    const apiUrl = process.env.GROQ_API_URL;
+    if (!apiUrl) {
+        throw new Error("GROQ_API_URL is not configured.");
+    }
+    const model = process.env.GROQ_MODEL;
+    if (!model) {
+        throw new Error("GROQ_MODEL is not configured.");
+    }
 
     // Construct context regarding the user's performance
     const performanceData = questions.map((q, idx) => {
@@ -186,12 +198,16 @@ Output MUST BE EXACTLY valid JSON in this structure:
 `;
 
     try {
-        const response = await fetch(OPENROUTER_API_URL, {
+        const response = await fetch(apiUrl, {
             method: "POST",
-            headers: getOpenRouterHeaders("Lurnix Quiz Analyzer", apiKey),
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
-                model: model,
-                messages: [{ role: "user", content: prompt }]
+                model,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.5,
             })
         });
 
@@ -204,7 +220,7 @@ Output MUST BE EXACTLY valid JSON in this structure:
             } catch (_) { }
             const sanitized = sanitizeAiErrorMessage(errMsg);
             console.error(`[Analysis Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
-            throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
+            throw new Error(`Groq API Error: ${response.status} - ${sanitized}`);
         }
 
         const responseData = await response.json();
@@ -225,8 +241,8 @@ Output MUST BE EXACTLY valid JSON in this structure:
         return JSON.parse(responseText) as AnalysisReport;
     } catch (e: any) {
         console.error("Analysis AI Generation Error: ", e);
-        if (e.message && e.message.includes("OpenRouter API Error")) {
-            throw e; // Pass through API quota/auth errors
+        if (e.message && e.message.includes("Groq API Error")) {
+            throw e;
         }
         throw new Error("Failed to generate analysis: " + (e.message || "Unknown error"));
     }

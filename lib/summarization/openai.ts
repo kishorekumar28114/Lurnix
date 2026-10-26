@@ -1,23 +1,21 @@
 import OpenAI from "openai";
 
-export function getSummarizationApiKey(): string {
-    return process.env.Lurnix_Summarize || process.env.OPENROUTER_API_KEY || "";
-}
+export function getSummarizationClient(): OpenAI {
+    const apiKey = process.env.GROQ_API_KEY;
+    const baseURL = process.env.GROQ_BASE_URL;
 
-export function getOpenAIClient(): OpenAI {
-    const key = getSummarizationApiKey();
-    if (!key) {
-        console.warn("WARNING: Lurnix_Summarize / OPENROUTER_API_KEY is not defined in the environment.");
+    if (!apiKey) {
+        console.warn("WARNING: GROQ_API_KEY is not defined in the environment.");
     }
+    if (!baseURL) {
+        console.warn("WARNING: GROQ_BASE_URL is not defined in the environment.");
+    }
+
     return new OpenAI({
-        baseURL: "https://openrouter.ai/api/v1",
-        apiKey: key || "missing_key",
-        defaultHeaders: {
-            "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-            "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || "Lurnix AI",
-        },
+        baseURL: baseURL || undefined,
+        apiKey: apiKey || "missing_key",
     });
 }
 
-const openai = getOpenAIClient();
+const openai = getSummarizationClient();
 export default openai;

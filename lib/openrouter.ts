@@ -1,49 +1,53 @@
 import axios from "axios";
 
-export const DEFAULT_AI_MODEL = "meta-llama/llama-3.1-8b-instruct";
-export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-
-export function getAiModel(): string {
-    return process.env.AI_MODEL || DEFAULT_AI_MODEL;
+export function getGroqApiKey(): string {
+    return process.env.GROQ_API_KEY || "";
 }
 
-export function getOpenRouterApiKey(envVarName = "OPENROUTER_API_KEY"): string {
-    if (envVarName && process.env[envVarName]) {
-        return process.env[envVarName] as string;
-    }
-    return process.env.OPENROUTER_API_KEY || "";
+export function getGroqApiUrl(): string {
+    return process.env.GROQ_API_URL || "";
 }
 
-export function getOpenRouterHeaders(title = "Lurnix AI", apiKeyOverride?: string): Record<string, string> {
-    const apiKey = apiKeyOverride || getOpenRouterApiKey();
+export function getGroqModel(): string {
+    return process.env.GROQ_MODEL || "";
+}
+
+export function getGroqHeaders(): Record<string, string> {
+    const apiKey = getGroqApiKey();
     return {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-        "X-Title": process.env.NEXT_PUBLIC_SITE_NAME || title,
     };
 }
 
 export function sanitizeAiErrorMessage(rawMessage: string): string {
     if (!rawMessage) return "Unknown AI service error";
     return rawMessage
+        .replace(/gsk_[a-zA-Z0-9_-]{20,}/g, "[REDACTED_KEY]")
         .replace(/sk-[a-zA-Z0-9_-]{20,}/g, "[REDACTED_KEY]")
         .replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, "Bearer [REDACTED]");
 }
 
 export async function translateText(text: string, targetLanguage: string): Promise<string> {
-    const apiKey = process.env.Lurnix_Translator || getOpenRouterApiKey();
+    const apiKey = getGroqApiKey();
     if (!apiKey) {
-        throw new Error("OpenRouter API key is not configured.");
+        throw new Error("GROQ_API_KEY is not configured.");
+    }
+    const apiUrl = getGroqApiUrl();
+    if (!apiUrl) {
+        throw new Error("GROQ_API_URL is not configured.");
+    }
+    const model = getGroqModel();
+    if (!model) {
+        throw new Error("GROQ_MODEL is not configured.");
     }
 
     const maxChars = 12000;
     const safeText = text.length > maxChars ? text.slice(0, maxChars) + "\n\n[...TEXT TRUNCATED DUE TO AI TOKEN LIMITS...]" : text;
-    const model = getAiModel();
 
     try {
         const response = await axios.post(
-            OPENROUTER_API_URL,
+            apiUrl,
             {
                 model,
                 messages: [
@@ -69,7 +73,7 @@ Output ONLY the translated text.`,
                 ],
             },
             {
-                headers: getOpenRouterHeaders("Lurnix Translator", apiKey),
+                headers: getGroqHeaders(),
             }
         );
 
@@ -80,7 +84,7 @@ Output ONLY the translated text.`,
             const upstreamError = error.response?.data?.error?.message || error.message;
             const sanitized = sanitizeAiErrorMessage(upstreamError);
             console.error(`[Translation Upstream Error] Status: ${status}, Model: ${model}, Message: ${sanitized}`);
-            throw new Error(`OpenRouter Error (${status || 'unknown'}): ${sanitized}`);
+            throw new Error(`Groq API Error (${status || 'unknown'}): ${sanitized}`);
         }
         throw error;
     }

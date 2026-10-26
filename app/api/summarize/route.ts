@@ -8,8 +8,11 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
     try {
-        if (!getOpenRouterApiKey()) {
-            return NextResponse.json({ error: 'OpenRouter API key is not configured' }, { status: 500 });
+        if (!process.env.GROQ_API_KEY) {
+            return NextResponse.json({ error: 'GROQ_API_KEY is not configured' }, { status: 500 });
+        }
+        if (!process.env.GROQ_MODEL) {
+            return NextResponse.json({ error: 'GROQ_MODEL is not configured' }, { status: 500 });
         }
 
         let formData;
@@ -45,9 +48,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No text content found to summarize' }, { status: 400 });
         }
 
-        // Limit content size to avoid token limits (gpt-4o-mini has large window but let's be safe)
+        // Limit content size to avoid token limits
         const truncatedContent = content.slice(0, 30000);
-        const model = getAiModel();
+        const model = process.env.GROQ_MODEL;
 
         const response = await openai.chat.completions.create({
             model,
