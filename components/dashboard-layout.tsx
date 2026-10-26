@@ -33,18 +33,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const isMobile = useMobile()
   const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
-    // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
-  }, [router])
+    // Fetch active user from secure HttpOnly cookie session on mount
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user)
+        }
+      })
+      .catch((err) => console.error("Failed to fetch user:", err))
+  }, [])
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn")
-    router.push("/login")
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      router.push("/login")
+    } catch (err) {
+      console.error("Logout failed", err)
+    }
   }
 
   const navItems = [
@@ -95,11 +104,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="p-6 border-b">
                 <div className="flex items-center gap-3">
                   <Avatar>
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">User</p>
-                    <p className="text-sm text-muted-foreground">user@example.com</p>
+                    <p className="font-medium">{user?.name || "User"}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email || ""}</p>
                   </div>
                 </div>
               </div>
@@ -121,11 +130,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="p-6 border-b">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">User</p>
-                  <p className="text-sm text-muted-foreground">user@example.com</p>
+                  <p className="font-medium">{user?.name || "User"}</p>
+                  {/* <p className="text-sm text-muted-foreground">{user?.email || ""}</p> */}
                 </div>
               </div>
             </div>

@@ -26,10 +26,7 @@ export default function FeedbackPage() {
 
   useEffect(() => {
     // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
+    
   }, [router])
 
   const handleSubmit = (e: React.FormEvent) => {

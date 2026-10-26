@@ -2,16 +2,23 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { connectToDatabase } from "../../mongodb";
+import { getSession } from "@/lib/auth/session";
 
 // POST: Add comment to post in MongoDB
 export async function POST(req) {
-  const { postId, author, content, attachments } = await req.json();
-  if (!postId || !author || !content) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { postId, content, attachments } = await req.json();
+  if (!postId || !content) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
   const comment = {
     _id: new ObjectId(),
-    author,
+    author: session.name,
+    authorId: session.userId,
     content,
     attachments: attachments || [],
     createdAt: new Date().toISOString()

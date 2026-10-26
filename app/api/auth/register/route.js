@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../_db";
 import bcrypt from "bcryptjs";
+import { signToken } from "@/lib/auth/session";
 
 export async function POST(req) {
   const { name, email, password } = await req.json();
@@ -17,8 +18,26 @@ export async function POST(req) {
     }
     const hashed = await bcrypt.hash(password, 10);
     const result = await users.insertOne({ name, email, password: hashed, createdAt: new Date() });
-    return NextResponse.json({ success: true, user: { name, email } });
+
+    // Generate JWT token
+    const token = await signToken({ userId: result.insertedId.toString(), email, name });
+
+    const response = NextResponse.json({ success: true, user: { name, email } });
+    
+    // Set secure HTTP-only cookie
+    response.cookies.set({
+      name: "session",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+    });
+
+    return response;
   } catch (err) {
+    console.error("Register error:", err);
     return NextResponse.json({ error: "Server error." }, { status: 500 });
   }
 }

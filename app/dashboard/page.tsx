@@ -11,10 +11,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Quick login state check
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    if (!isLoggedIn) {
-      router.push("/login");
-    }
+    
   }, [router])
 
   const features = [

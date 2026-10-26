@@ -20,10 +20,7 @@ export default function VoiceToChatPage() {
 
   useEffect(() => {
     // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
+    
 
     // Initialize speech synthesis
     if (typeof window !== "undefined" && window.speechSynthesis) {

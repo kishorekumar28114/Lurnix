@@ -15,10 +15,7 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([])
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
+    
   }, [router])
 
   useEffect(() => {

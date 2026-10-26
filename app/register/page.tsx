@@ -40,7 +40,6 @@ export default function RegisterPage() {
         setError(data.error || "Registration failed");
         return;
       }
-      localStorage.setItem("isLoggedIn", "true");
       router.push("/dashboard");
     } catch (err) {
       setError("Something went wrong. Try again.");

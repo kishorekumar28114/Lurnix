@@ -13,10 +13,7 @@ export default function FeaturesPage() {
 
   useEffect(() => {
     // Check if user is logged in
-    const isLoggedIn = localStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/login")
-    }
+    
   }, [router])
 
   const features = [

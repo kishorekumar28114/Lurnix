@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-
-let conversationHistory = [];
+import { getSession } from '@/lib/auth/session';
 
 export async function POST(request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const body = await request.json();
-  const { message } = body;
+  const { message, historyContext = [] } = body;
 
   if (!message) {
     return NextResponse.json({ error: 'Message is required' }, { status: 400 });
   }
 
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = process.env.Lurnix_Chatbot || process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: 'OpenRouter API key is not configured' }, { status: 500 });
   }
 
-  conversationHistory.push({ role: 'user', content: message });
+  let conversationHistory = [...historyContext, { role: 'user', content: message }];
   if (conversationHistory.length > 10) {
     conversationHistory = conversationHistory.slice(-10);
   }
@@ -62,4 +66,3 @@ export async function POST(request) {
     );
   }
 }
-

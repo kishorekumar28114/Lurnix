@@ -12,7 +12,7 @@ import {
  * We want EXACTLY 10 questions spread out over whatever chunks are provided.
  */
 export async function generateQuizQuestions(chunks: string[]): Promise<Question[]> {
-    const apiKey = getOpenRouterApiKey();
+    const apiKey = process.env.Lurnix_Quiz || getOpenRouterApiKey();
     if (!apiKey) {
         throw new Error("OpenRouter API key is not configured.");
     }
@@ -86,7 +86,7 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
         try {
             const response = await fetch(OPENROUTER_API_URL, {
                 method: "POST",
-                headers: getOpenRouterHeaders("Lurnix Quiz Generator"),
+                headers: getOpenRouterHeaders("Lurnix Quiz Generator", apiKey),
                 body: JSON.stringify({
                     model: model,
                     messages: [{ role: "user", content: prompt }]
@@ -99,7 +99,7 @@ Return EXACTLY the requested JSON structure list with exactly ${chunkCount} obje
                 try {
                     const parsed = JSON.parse(errData);
                     errMsg = parsed.error?.message || errData;
-                } catch (_) {}
+                } catch (_) { }
                 const sanitized = sanitizeAiErrorMessage(errMsg);
                 console.error(`[Quiz Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
                 throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
@@ -142,7 +142,7 @@ export async function generatePerformanceAnalysis(
     questions: Question[],
     userAnswers: any[]
 ): Promise<AnalysisReport> {
-    const apiKey = getOpenRouterApiKey();
+    const apiKey = process.env.Lurnix_Quiz || getOpenRouterApiKey();
     if (!apiKey) {
         throw new Error("OpenRouter API key is not configured.");
     }
@@ -188,7 +188,7 @@ Output MUST BE EXACTLY valid JSON in this structure:
     try {
         const response = await fetch(OPENROUTER_API_URL, {
             method: "POST",
-            headers: getOpenRouterHeaders("Lurnix Quiz Analyzer"),
+            headers: getOpenRouterHeaders("Lurnix Quiz Analyzer", apiKey),
             body: JSON.stringify({
                 model: model,
                 messages: [{ role: "user", content: prompt }]
@@ -201,7 +201,7 @@ Output MUST BE EXACTLY valid JSON in this structure:
             try {
                 const parsed = JSON.parse(errData);
                 errMsg = parsed.error?.message || errData;
-            } catch (_) {}
+            } catch (_) { }
             const sanitized = sanitizeAiErrorMessage(errMsg);
             console.error(`[Analysis Upstream Error] Status: ${response.status}, Model: ${model}, Message: ${sanitized}`);
             throw new Error(`OpenRouter API Error: ${response.status} - ${sanitized}`);
@@ -231,4 +231,3 @@ Output MUST BE EXACTLY valid JSON in this structure:
         throw new Error("Failed to generate analysis: " + (e.message || "Unknown error"));
     }
 }
-

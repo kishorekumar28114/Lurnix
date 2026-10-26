@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "../../../mongodb";
 import { ObjectId } from "mongodb";
+import { getSession } from "@/lib/auth/session";
 
 // POST: Add comment to post by ID (RESTful)
 export async function POST(req, { params }) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = params;
   try {
-    const { author, content, attachments } = await req.json();
+    const { content, attachments } = await req.json();
     const comment = {
       id: Date.now(),
-      author,
+      author: session.name,     // Reliable Name
+      authorId: session.userId, // ADDED User ID isolation
       content,
       attachments: attachments || [],
       createdAt: new Date().toISOString()

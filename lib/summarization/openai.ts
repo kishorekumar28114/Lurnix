@@ -1,10 +1,13 @@
 import OpenAI from "openai";
-import { getOpenRouterApiKey } from "@/lib/openrouter";
+
+export function getSummarizationApiKey(): string {
+    return process.env.Lurnix_Summarize || process.env.OPENROUTER_API_KEY || "";
+}
 
 export function getOpenAIClient(): OpenAI {
-    const key = getOpenRouterApiKey();
+    const key = getSummarizationApiKey();
     if (!key) {
-        console.warn("WARNING: OPENROUTER_API_KEY is not defined in the environment.");
+        console.warn("WARNING: Lurnix_Summarize / OPENROUTER_API_KEY is not defined in the environment.");
     }
     return new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
@@ -18,4 +21,3 @@ export function getOpenAIClient(): OpenAI {
 
 const openai = getOpenAIClient();
 export default openai;
-
