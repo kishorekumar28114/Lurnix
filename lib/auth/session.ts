@@ -1,30 +1,17 @@
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import {
+  signToken,
+  verifyToken,
+  getJwtSecret,
+  getJwtKey,
+  type SessionPayload,
+} from "./jwt";
 
-const secretKey = process.env.JWT_SECRET || "default_secret_key_for_development_only";
-const key = new TextEncoder().encode(secretKey);
+export { signToken, verifyToken, getJwtSecret, getJwtKey };
+export type { SessionPayload };
 
-export async function signToken(payload: any) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("7d") // 7 days expiration
-    .sign(key);
-}
-
-export async function verifyToken(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, key, {
-      algorithms: ["HS256"],
-    });
-    return payload;
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function getSession() {
+export async function getSession(): Promise<SessionPayload | null> {
   const session = cookies().get("session")?.value;
   if (!session) return null;
-  return await verifyToken(session);
+  return await verifyToken<SessionPayload>(session);
 }

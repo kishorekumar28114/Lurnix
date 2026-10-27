@@ -189,7 +189,7 @@ export default function CodeBlocksPage() {
                     {consoleOutput.length > 0 ? (
                       <pre>{consoleOutput.join("\n")}</pre>
                     ) : (
-                      <pre>// Program output will appear here when you run your code</pre>
+                      <pre>{"// Program output will appear here when you run your code"}</pre>
                     )}
                   </div>
                 </TabsContent>

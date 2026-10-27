@@ -28,3 +28,5 @@ export function useMobile() {
   return isMobile
 }
 
+export const useIsMobile = useMobile
+

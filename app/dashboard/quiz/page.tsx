@@ -131,7 +131,7 @@ export default function Home() {
                   <ol className="list-decimal list-inside space-y-1">
                     <li>Open your required video on <a href="https://youtube.com" target="_blank" rel="noreferrer" className="underline font-medium hover:text-amber-900">YouTube</a>.</li>
                     <li>Click on the video description.</li>
-                    <li>Scroll down and click <b>"Show Transcript"</b>.</li>
+                    <li>Scroll down and click <b>&quot;Show Transcript&quot;</b>.</li>
                     <li>Select all the transcript text, right-click, and select <b>Copy</b>.</li>
                     <li>Paste the text into the box below.</li>
                   </ol>

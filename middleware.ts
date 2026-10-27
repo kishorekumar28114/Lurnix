@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-
-// Using jose directly because middleware runs on Edge runtime and standard Node.js crypto (used in jsonwebtoken) is not available
-const secretKey = process.env.JWT_SECRET || "default_secret_key_for_development_only";
-const key = new TextEncoder().encode(secretKey);
+import { verifyToken } from "@/lib/auth/jwt";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -21,12 +17,12 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      // Verify the JWT token
-      await jwtVerify(sessionCookie, key, {
-        algorithms: ["HS256"],
-      });
+      const payload = await verifyToken(sessionCookie);
+      if (!payload) {
+        return handleUnauthorized(request, isApiRoute);
+      }
 
-      // Token is valid, allow the request to proceed
+      // Token is valid, allow request to proceed
       return NextResponse.next();
     } catch (error) {
       // Token is invalid or expired
@@ -34,7 +30,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Allow access to public routes (/, /login, /register, etc.)
+  // Allow access to public routes
   return NextResponse.next();
 }
 
@@ -43,7 +39,9 @@ function handleUnauthorized(request: NextRequest, isApiRoute: boolean) {
     return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
   } else {
     // Redirect unauthenticated users to the login page
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("from", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 }
 
@@ -55,6 +53,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public (public files)
+     * - assets (asset files)
      */
     "/((?!_next/static|_next/image|favicon.ico|public/|assets/).*)",
   ],

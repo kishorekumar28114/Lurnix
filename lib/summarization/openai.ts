@@ -1,21 +1,20 @@
 import OpenAI from "openai";
+import { getGroqClient } from "@/lib/groq";
 
 export function getSummarizationClient(): OpenAI {
-    const apiKey = process.env.GROQ_API_KEY;
-    const baseURL = process.env.GROQ_BASE_URL;
-
-    if (!apiKey) {
-        console.warn("WARNING: GROQ_API_KEY is not defined in the environment.");
-    }
-    if (!baseURL) {
-        console.warn("WARNING: GROQ_BASE_URL is not defined in the environment.");
-    }
-
-    return new OpenAI({
-        baseURL: baseURL || undefined,
-        apiKey: apiKey || "missing_key",
-    });
+  return getGroqClient();
 }
 
-const openai = getSummarizationClient();
+// Lazy proxy so that importing this module does not invoke getGroqClient at module evaluation time
+const openai = new Proxy({} as OpenAI, {
+  get(_target, prop) {
+    const client = getSummarizationClient() as any;
+    const value = client[prop];
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
+
 export default openai;

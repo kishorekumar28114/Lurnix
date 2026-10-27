@@ -17,7 +17,7 @@ export default function VisualizationPage() {
   const [error, setError] = useState("")
   const [isDrawn, setIsDrawn] = useState(false)
   const [selectedShape, setSelectedShape] = useState("")
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     // Check if user is logged in
@@ -27,13 +27,15 @@ export default function VisualizationPage() {
     const canvas = canvasRef.current
     if (canvas) {
       const ctx = canvas.getContext("2d")
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      drawGrid(ctx)
-      drawAxes(ctx)
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        drawGrid(ctx)
+        drawAxes(ctx)
+      }
     }
   }, [router])
 
-  const drawGrid = (ctx) => {
+  const drawGrid = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#eee"
     for (let x = 0; x <= 400; x += 20) {
       ctx.beginPath()
@@ -49,7 +51,7 @@ export default function VisualizationPage() {
     }
   }
 
-  const drawAxes = (ctx) => {
+  const drawAxes = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#000"
     ctx.lineWidth = 2
     ctx.beginPath()
@@ -66,7 +68,7 @@ export default function VisualizationPage() {
     ctx.fillText("X", 390, 195)
   }
 
-  const drawCircle = (ctx) => {
+  const drawCircle = (ctx: CanvasRenderingContext2D) => {
     ctx.beginPath()
     ctx.arc(200, 200, 60, 0, Math.PI * 2)
     ctx.fillStyle = "#FF6B6B"
@@ -75,21 +77,21 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawSquare = (ctx) => {
+  const drawSquare = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = "#4ECDC4"
     ctx.fillRect(130, 130, 140, 140)
     ctx.strokeStyle = "#333"
     ctx.strokeRect(130, 130, 140, 140)
   }
 
-  const drawRectangle = (ctx) => {
+  const drawRectangle = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = "#FFD93D"
     ctx.fillRect(100, 140, 200, 120)
     ctx.strokeStyle = "#333"
     ctx.strokeRect(100, 140, 200, 120)
   }
 
-  const drawPolygon = (ctx, sides) => {
+  const drawPolygon = (ctx: CanvasRenderingContext2D, sides: number) => {
     const radius = 70
     const angle = (Math.PI * 2) / sides
     ctx.beginPath()
@@ -106,7 +108,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawStar = (ctx) => {
+  const drawStar = (ctx: CanvasRenderingContext2D) => {
     const points = 5
     const outerRadius = 60
     const innerRadius = 25
@@ -126,7 +128,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawLinearGraph = (ctx) => {
+  const drawLinearGraph = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#FF6347"
     ctx.beginPath()
     ctx.moveTo(0, 400)
@@ -134,7 +136,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawQuadraticGraph = (ctx) => {
+  const drawQuadraticGraph = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#1E90FF"
     ctx.beginPath()
     for (let x = -200; x <= 200; x++) {
@@ -144,7 +146,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawCubicGraph = (ctx) => {
+  const drawCubicGraph = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#32CD32"
     ctx.beginPath()
     for (let x = -200; x <= 200; x++) {
@@ -154,7 +156,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawSineWave = (ctx) => {
+  const drawSineWave = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#FF69B4"
     ctx.beginPath()
     for (let x = 0; x <= 400; x++) {
@@ -164,7 +166,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawCosineWave = (ctx) => {
+  const drawCosineWave = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#8A2BE2"
     ctx.beginPath()
     for (let x = 0; x <= 400; x++) {
@@ -174,7 +176,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawEllipse = (ctx) => {
+  const drawEllipse = (ctx: CanvasRenderingContext2D) => {
     ctx.beginPath()
     ctx.ellipse(200, 200, 90, 60, 0, 0, Math.PI * 2)
     ctx.fillStyle = "#87CEFA"
@@ -183,7 +185,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawParabola = (ctx) => {
+  const drawParabola = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#0099CC"
     ctx.beginPath()
     for (let x = -200; x <= 200; x++) {
@@ -193,7 +195,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const drawHyperbola = (ctx) => {
+  const drawHyperbola = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = "#FF4500"
     ctx.beginPath()
     for (let x = 1; x <= 200; x++) {
@@ -207,7 +209,7 @@ export default function VisualizationPage() {
     ctx.stroke()
   }
 
-  const isGraphType = (q) => {
+  const isGraphType = (q: string) => {
     return ["linear", "quadratic", "cubic", "sine", "cosine", "parabola", "hyperbola", "ellipse"].some((type) =>
       q.includes(type),
     )
@@ -215,7 +217,9 @@ export default function VisualizationPage() {
 
   const handleSolve = () => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const ctx = canvas.getContext("2d")
+    if (!ctx) return
     ctx.clearRect(0, 0, canvas.width, canvas.height)
 
     const questionLower = question.toLowerCase() || selectedShape.toLowerCase()
@@ -249,6 +253,7 @@ export default function VisualizationPage() {
 
   const handleDownload = () => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const link = document.createElement("a")
     link.download = "drawing.png"
     link.href = canvas.toDataURL("image/png")

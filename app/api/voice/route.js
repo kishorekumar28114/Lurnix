@@ -1,70 +1,40 @@
-import { NextResponse } from 'next/server';
-import axios from 'axios';
-
-let conversationHistory = [];
+import { NextResponse } from "next/server";
+import { createGroqChatCompletion, formatGroqError } from "@/lib/groq";
 
 export async function POST(request) {
-  const body = await request.json();
-  const { text } = body;
-
-  if (!text) {
-    return NextResponse.json({ error: 'Text is required' }, { status: 400 });
-  }
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: 'GROQ_API_KEY is not configured' }, { status: 500 });
-  }
-
-  const apiUrl = process.env.GROQ_API_URL;
-  if (!apiUrl) {
-    return NextResponse.json({ error: 'GROQ_API_URL is not configured' }, { status: 500 });
-  }
-
-  const model = process.env.GROQ_MODEL;
-  if (!model) {
-    return NextResponse.json({ error: 'GROQ_MODEL is not configured' }, { status: 500 });
-  }
-
-  conversationHistory.push({ role: 'user', content: text });
-  if (conversationHistory.length > 10) {
-    conversationHistory = conversationHistory.slice(-10);
-  }
-
   try {
-    const groqResponse = await axios.post(
-      apiUrl,
-      {
-        model,
-        messages: conversationHistory,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    let reply = '';
-    if (
-      groqResponse.data &&
-      groqResponse.data.choices &&
-      groqResponse.data.choices.length > 0
-    ) {
-      reply = groqResponse.data.choices[0].message.content;
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
-    conversationHistory.push({ role: 'assistant', content: reply });
+
+    const { text, history = [] } = body || {};
+
+    if (!text || typeof text !== "string") {
+      return NextResponse.json({ error: "Text is required" }, { status: 400 });
+    }
+
+    let messages = Array.isArray(history) ? [...history] : [];
+    messages.push({ role: "user", content: text });
+    if (messages.length > 10) {
+      messages = messages.slice(-10);
+    }
+
+    const completion = await createGroqChatCompletion({
+      messages,
+      temperature: 0.7,
+    });
+
+    const reply = completion.choices[0]?.message?.content || "";
     return NextResponse.json({ reply });
   } catch (error) {
-    const status = error.response?.status || 500;
-    const rawError = error.response?.data?.error?.message || error.message;
-    const sanitizedMsg = typeof rawError === 'string'
-      ? rawError.replace(/gsk_[a-zA-Z0-9_-]{20,}/g, '[REDACTED_KEY]').replace(/sk-[a-zA-Z0-9_-]{20,}/g, '[REDACTED_KEY]').replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, 'Bearer [REDACTED]')
-      : 'Failed to process AI request';
-    console.error(`[Voice API Error] Status: ${status}, Model: ${model}, Message: ${sanitizedMsg}`);
+    const formatted = formatGroqError(error);
+    console.error(`[Voice API Error] Status: ${formatted.status}, Message: ${formatted.error}`);
     return NextResponse.json(
-      { error: 'Failed to process AI request', details: sanitizedMsg },
-      { status: status >= 400 && status < 600 ? status : 500 }
+      { error: formatted.error, details: formatted.details || formatted.error },
+      { status: formatted.status }
     );
   }
 }

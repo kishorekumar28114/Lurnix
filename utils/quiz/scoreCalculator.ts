@@ -1,4 +1,4 @@
-import { UserAnswer, QuizResult } from "../lib/types";
+import { UserAnswer, QuizResult } from "@/lib/quiz/types";
 
 /**
  * Calculates the score from an array of user answers.

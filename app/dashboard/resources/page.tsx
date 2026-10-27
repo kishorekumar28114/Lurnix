@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,41 +24,67 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     // Check if user is logged in
-    
   }, [router])
 
   async function searchVideos() {
-    if (!query.trim()) return
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) {
+      setResults([])
+      setError("")
+      setIsLoading(false)
+      return
+    }
 
     setIsLoading(true)
     setError("")
 
     try {
-      const response = await fetch("https://google.serper.dev/search", {
-        method: "POST",
+      const response = await fetch(`/api/resources?q=${encodeURIComponent(trimmedQuery)}`, {
+        method: "GET",
         headers: {
-          "X-API-KEY": "e604cec13f595e905ade07348c8a19aa102cb8e1", // Replace this with your real API key
-          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
-        body: JSON.stringify({
-          q: "site:youtube.com " + query,
-        }),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch search results")
+        let errorMsg = "Failed to fetch search results"
+        try {
+          const errData = await response.json()
+          if (errData && typeof errData.error === "string") {
+            errorMsg = errData.error
+          }
+        } catch {
+          // Response body was not JSON
+        }
+        throw new Error(errorMsg)
       }
 
-      const data = await response.json()
-
-      if (data.organic && Array.isArray(data.organic)) {
-        setResults(data.organic.slice(0, 5))
-      } else {
-        setResults([])
+      let data: any
+      try {
+        data = await response.json()
+      } catch {
+        throw new Error("Received malformed response data from server")
       }
-    } catch (err) {
-      console.error(err)
-      setError("An error occurred while searching. Please try again.")
+
+      const rawItems = Array.isArray(data?.results)
+        ? data.results
+        : Array.isArray(data?.organic)
+        ? data.organic
+        : []
+
+      const parsedResults: VideoResult[] = rawItems
+        .filter((item: any) => item && typeof item === "object")
+        .map((item: any) => ({
+          title: typeof item.title === "string" ? item.title : "Educational Video",
+          link: typeof item.link === "string" ? item.link : "",
+          snippet: typeof item.snippet === "string" ? item.snippet : "",
+        }))
+        .filter((item: VideoResult) => item.link.trim().length > 0)
+
+      setResults(parsedResults.slice(0, 5))
+    } catch (err: any) {
+      console.error("Search error:", err)
+      setError(err?.message || "An error occurred while searching. Please try again.")
       setResults([])
     } finally {
       setIsLoading(false)
@@ -73,14 +98,23 @@ export default function ResourcesPage() {
     }
   }
 
-  // Extract video ID from YouTube URL
-  const getVideoId = (url: string) => {
-    const parts = url.split("v=")
-    if (parts.length > 1) {
-      const idPart = parts[1].split("&")[0]
-      return idPart
+  // Extract video ID from various YouTube URL formats
+  const getVideoId = (url: string): string | null => {
+    if (!url || typeof url !== "string") return null
+    try {
+      const vMatch = url.match(/[?&]v=([^&#]+)/)
+      if (vMatch && vMatch[1]) return vMatch[1]
+
+      const shortMatch = url.match(/youtu\.be\/([^?&#]+)/)
+      if (shortMatch && shortMatch[1]) return shortMatch[1]
+
+      const embedMatch = url.match(/youtube\.com\/(?:embed|shorts)\/([^?&#]+)/)
+      if (embedMatch && embedMatch[1]) return embedMatch[1]
+
+      return null
+    } catch {
+      return null
     }
-    return null
   }
 
   return (

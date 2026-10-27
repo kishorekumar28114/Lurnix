@@ -111,7 +111,8 @@ export default function VoiceToChatPage() {
       })
       .catch(err => {
         console.error('Error with the API request:', err);
-        setError('Failed to get a response from the AI service.');
+        const serverError = err.response?.data?.error || err.response?.data?.details;
+        setError(serverError || 'Failed to get a response from the AI service.');
       });
       
     }

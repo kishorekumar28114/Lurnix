@@ -48,7 +48,10 @@ export default function ChatbotPage() {
       if (data.reply) {
         setMessages((prev) => [...prev, { role: "bot", text: data.reply }])
       } else {
-        setMessages((prev) => [...prev, { role: "bot", text: "No reply received." }])
+        setMessages((prev) => [
+          ...prev,
+          { role: "bot", text: data.error || data.details || "No reply received." },
+        ])
       }
     } catch (error) {
       console.error("Error:", error)
